@@ -1,0 +1,1 @@
+enum DisplayType { tabs, grid }

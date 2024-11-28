@@ -104,10 +104,30 @@ class _StreamViewState extends State<StreamView> {
     );
   }
 
-  Size? _getImageDimensions(Uint8List imageData) {
-    // TODO: Implement JPEG dimension extraction
-    // For now, returning a default size matching your ESP32 VGA setting
-    return const Size(640, 480);
+  Size _getImageDimensions(Uint8List imageData) {
+    int width = 0;
+    int height = 0;
+
+    // Search for SOF0 marker (Start Of Frame)
+    for (int i = 0; i < imageData.length - 8; i++) {
+      // Check for SOF0 marker (0xFF, 0xC0)
+      if (imageData[i] == 0xFF && imageData[i + 1] == 0xC0) {
+        // Height is at offset 5-6 (big endian)
+        height = (imageData[i + 5] << 8) | imageData[i + 6];
+        // Width is at offset 7-8 (big endian)
+        width = (imageData[i + 7] << 8) | imageData[i + 8];
+        break;
+      }
+    }
+
+    // Fallback to default VGA if dimensions couldn't be extracted
+    if (width == 0 || height == 0) {
+      debugPrint(
+          'Warning: Could not extract JPEG dimensions, using default VGA size');
+      return const Size(640, 480);
+    }
+
+    return Size(width.toDouble(), height.toDouble());
   }
 }
 
